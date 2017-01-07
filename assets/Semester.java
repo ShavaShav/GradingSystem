@@ -2,7 +2,8 @@ package assets;
 
 import java.util.ArrayList;
 
-public class Semester{
+public class Semester implements java.io.Serializable{
+	private static final long serialVersionUID = -8275772933637314385L;
 	private String season;
 	private int year;
 	
@@ -52,6 +53,10 @@ public class Semester{
 				return true;
 		}
 		return false;
+	}
+	
+	public static String[] getValidSeasons(){
+		return new String[]{"Winter","Spring","Summer","Fall"};
 	}
 	
 	@Override
