@@ -9,7 +9,8 @@ public class Task extends Observable implements java.io.Serializable{
 	private Date dueDate;
 	private double grade;
 	private double weight;
-	private boolean isComplete;
+	private boolean isComplete; // Task has been submitted
+	private boolean isGraded; // Task has been graded
 	
 	public Task(String name){
 		this.name = name;
@@ -17,6 +18,12 @@ public class Task extends Observable implements java.io.Serializable{
 		grade = 0.0;
 		weight = 0.0;
 		isComplete=false;
+		isGraded=false;
+	}
+	
+	public void setName(String name){
+		this.name = name;
+		notifyChanged();
 	}
 	
 	public void setDueDate(Date date){
@@ -26,6 +33,7 @@ public class Task extends Observable implements java.io.Serializable{
 	
 	public void setGrade(double grade){
 		this.grade = grade;
+		isGraded = true;
 		isComplete = true;
 		notifyChanged();
 	}
@@ -34,13 +42,18 @@ public class Task extends Observable implements java.io.Serializable{
 		this.weight = weight;
 		notifyChanged();
 	}
-
+	
+	public void setComplete(boolean isComplete){
+		this.isComplete = isComplete;
+		notifyChanged();
+	}
 	
 	public String getName(){ return name; }
 	public Date getDueDate(){ return dueDate; }
 	public double getGrade(){ return grade; }
 	public double getWeight(){ return weight; }
 	public boolean isComplete(){ return isComplete; }
+	public boolean isGraded(){ return isGraded; }
 	
 	public boolean before(Task task){
 		return this.dueDate.before(task.dueDate);	
@@ -48,6 +61,7 @@ public class Task extends Observable implements java.io.Serializable{
 	
 	// Let course know of change to task model
 	public void notifyChanged(){
+		System.out.println("Task model changed.");
 		this.setChanged();
 		this.notifyObservers();
 	}

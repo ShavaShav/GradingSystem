@@ -64,9 +64,20 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 	
 	public String getName(){ return name; }
 	public int getCredits(){ return credits; }
+	public ArrayList<Course> getCourseList(){ return courseList; }
 	public int getNumCourses(){ return numCourses; }
 	
-	public double getCreditsEarned(){
+	public double getCumulativeGrade(){
+		double grade = 0.00;
+		for (Course c : courseList){
+			if (c.isComplete()){
+				grade += c.getGrade() * c.getCreditHours();
+			}
+		}
+		return grade / getCreditsEarned();
+	}
+	
+	public int getCreditsEarned(){
 		int creditsEarned = 0;
 		for (Course course : courseList){
 			if (course.isComplete())
@@ -105,6 +116,7 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 
 	// Let view know of change to program model
 	public void notifyChanged(){
+		System.out.println("Program model changed.");
 		this.setChanged();
 		this.notifyObservers();
 	}

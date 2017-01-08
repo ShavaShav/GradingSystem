@@ -16,11 +16,6 @@ public class Course extends Observable implements Observer, java.io.Serializable
 	private boolean isComplete;
 	ArrayList<Task> taskList;
 	
-	public String toString(){
-		return code + " " + name + " (" + semester + ") in room " + classRoom +
-				" --> " + grade + "% (" + isComplete + ")";
-	}
-	
 	public Course(String name, String code, int creditHours, Semester semester, String classRoom){
 		this.name = name;
 		this.code = code;
@@ -32,13 +27,33 @@ public class Course extends Observable implements Observer, java.io.Serializable
 		this.isComplete = false;
 	}
 	
+	// Accessors
 	public String getName(){ return name; }
 	public String getCode(){ return code; }
 	public int getCreditHours(){ return creditHours; }
 	public Semester getSemester(){ return semester; }
 	public String getClassRoom(){ return classRoom; }	
 	public double getGrade(){ return grade; }
+	public Task getTask(int index){ return taskList.get(index); }
 	public boolean isComplete(){ return isComplete; }
+	public int getNumTasks(){ return taskList.size(); }
+	public ListIterator<Task> getIterator(){ return taskList.listIterator(); }
+	
+	// Mutators
+	public void setName(String name){ this.name = name; notifyChanged(); }
+	public void setCode(String code){ this.code = code; notifyChanged(); }
+	public void setCredits(int creditHours){ this.creditHours = creditHours; notifyChanged(); }
+	public void setSemester(String season, int year){ 
+		try {
+			this.semester = new Semester(season, year);
+			 notifyChanged();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} }
+	public void setClassRoom(String classRoom){ this.classRoom = classRoom;  notifyChanged();}
+	public void setGrade(double grade){ this.grade = grade;  notifyChanged();}
+	public void setComplete(boolean isComplete){ this.isComplete = isComplete;  notifyChanged();}
+	
 	
 	// true if added task
 	public boolean addTask(Task task){
@@ -50,6 +65,10 @@ public class Course extends Observable implements Observer, java.io.Serializable
 		} catch (Exception e) {
 			return false;
 		}
+	}
+	
+	public boolean removeTask(int index){
+		return removeTask(taskList.get(index));
 	}
 	
 	// true if removed task
@@ -69,25 +88,18 @@ public class Course extends Observable implements Observer, java.io.Serializable
 		double totalWeight = 0.0;
 		double totalGrade = 0.0;
 		for (Task task : taskList){
-			if (task.isComplete()){
+			if (task.isGraded()){
 				totalWeight += task.getWeight();
-				totalGrade += task.getGrade();				
+				totalGrade += task.getGrade() * task.getWeight();				
 			}
 		}
-		if (totalWeight >= 100){ // if weight exceeds, grade counts for more
-			totalWeight = 100;
-			isComplete = true;
+		if (totalWeight >= 1){ // if weight exceeds, grade counts for more
+			totalWeight = 1;
 		}
-		return totalGrade/totalWeight;
+		// if valid weight and grade, return result, else 0.00
+		return totalWeight > 0 && totalGrade > 0 ? totalGrade/totalWeight : 0.00;
 	}
 
-	public int getNumTasks(){
-		return taskList.size();
-	}
-	
-	public ListIterator<Task> getIterator(){
-		return taskList.listIterator();
-	}
 
 	// when task model is updated, update course variables and notify observers (like course view)
 	@Override
@@ -98,9 +110,15 @@ public class Course extends Observable implements Observer, java.io.Serializable
 		notifyChanged();
 	}
 	
-	// Let view know of change to program model
+	// Let view know of change to course model
 	public void notifyChanged(){
+		System.out.println("Course model changed.");
 		this.setChanged();
 		this.notifyObservers();
+	}
+	
+	public String toString(){
+		return code + " " + name + " (" + semester + ") in room " + classRoom +
+				" --> " + grade + "% (" + isComplete + ")";
 	}
 }

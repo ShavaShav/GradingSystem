@@ -72,7 +72,7 @@ public class ProgramController {
 		} catch (ClassNotFoundException ex) {
 			ex.printStackTrace();
 		} catch(FileNotFoundException ex) {
-			return new Program();
+			ex.printStackTrace();
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}

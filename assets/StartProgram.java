@@ -2,6 +2,7 @@ package assets;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 
 public class StartProgram {
 	private final static String defaultSavePath = "/temp/temp_program.ser";
@@ -22,7 +23,15 @@ public class StartProgram {
 	public static void main(String[] args) throws Exception {
 		// using MVC pattern to seperate GUI, data, and a controller to handle events
 		// each is created only once here and then passed around.
-		Program model = ProgramController.getModelFromPath(defaultSavePath);
+		
+		// load default save if it exists, otherwise start new
+		File defaultSave = new File(defaultSavePath);
+		Program model;
+		if (defaultSave.exists())
+			model = ProgramController.getModelFromPath(defaultSavePath);
+		else
+			model = new Program();
+		
 		go(model);
 		// System.out.println(model.obsString()); // debug structure of model with observers
 	}
