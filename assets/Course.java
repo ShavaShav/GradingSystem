@@ -14,7 +14,8 @@ public class Course extends Observable implements Observer, java.io.Serializable
 	private String classRoom;
 	private double grade;
 	private boolean isComplete;
-	ArrayList<Task> taskList;
+	private boolean isMajor;
+	private ArrayList<Task> taskList;
 	
 	public Course(String name, String code, int creditHours, Semester semester, String classRoom){
 		this.name = name;
@@ -37,7 +38,9 @@ public class Course extends Observable implements Observer, java.io.Serializable
 	public Task getTask(int index){ return taskList.get(index); }
 	public boolean isComplete(){ return isComplete; }
 	public int getNumTasks(){ return taskList.size(); }
+	public boolean isMajor(){ return isMajor; }
 	public ListIterator<Task> getIterator(){ return taskList.listIterator(); }
+	public ArrayList<Task> getTaskList(){ return taskList; }
 	
 	// Mutators
 	public void setName(String name){ this.name = name; notifyChanged(); }
@@ -53,7 +56,7 @@ public class Course extends Observable implements Observer, java.io.Serializable
 	public void setClassRoom(String classRoom){ this.classRoom = classRoom;  notifyChanged();}
 	public void setGrade(double grade){ this.grade = grade;  notifyChanged();}
 	public void setComplete(boolean isComplete){ this.isComplete = isComplete;  notifyChanged();}
-	
+	public void setMajor(boolean isMajor){ this.isMajor = isMajor; notifyChanged(); }
 	
 	// true if added task
 	public boolean addTask(Task task){
@@ -99,8 +102,7 @@ public class Course extends Observable implements Observer, java.io.Serializable
 		// if valid weight and grade, return result, else 0.00
 		return totalWeight > 0 && totalGrade > 0 ? totalGrade/totalWeight : 0.00;
 	}
-
-
+	
 	// when task model is updated, update course variables and notify observers (like course view)
 	@Override
 	public void update(Observable arg0, Object arg1) {

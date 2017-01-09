@@ -1,11 +1,16 @@
 package assets;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
@@ -18,6 +23,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 
 public class ProgramFrame extends JFrame implements Observer, ActionListener{
@@ -26,7 +32,7 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	private HashMap<Course, CourseController> c_controllers;
 	
 	private JButton newProgram, addCourse, saveButton, loadButton;	
-	private JLabel progLabel, credLabel, cumAvgLabel;;
+	private JLabel progLabel, credLabel, cumAvgLabel, mjrAvgLabel;
 	private JPanel mainPanel;
 	private JScrollPane coursePane;
 	private JTable courseTable;
@@ -77,8 +83,12 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 		credLabel  = new JLabel("Credits: ");
 		mainLabels.add(progLabel);
 		mainLabels.add(credLabel);
+		JPanel gradeLabels = new JPanel(new GridLayout(0,3));
 		cumAvgLabel = new JLabel("Cumulative Average: ");
-		mainLabels.add(cumAvgLabel);
+		gradeLabels.add(cumAvgLabel);
+		mjrAvgLabel = new JLabel("\tMajor Average: ");
+		gradeLabels.add(mjrAvgLabel);
+		mainLabels.add(gradeLabels);;
 		completionBar = new JProgressBar(0, program.getCredits());
 		completionBar.setValue(0);
 		completionBar.setStringPainted(true);
@@ -88,7 +98,7 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 			coursePane = new JScrollPane();
 			coursePane.add(new JLabel("No courses yet..."));
 		} else {
-			coursePane = createCoursePane();
+			coursePane = createCoursePane(program.getCourseList());
 		}
 		mainPanel.add(coursePane, BorderLayout.CENTER);		
 		return mainPanel;
@@ -118,23 +128,32 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 		bottom.add(addCourse);
 		addCourse.addActionListener(this);
 		
+		JButton deleteCourse = new JButton("Delete Course");
+		deleteCourse.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (courseTable.getSelectedRow() >= 0)
+					program.removeCourse(courseTable.getSelectedRow());
+			}
+		});
+		bottom.add(deleteCourse);
 		return bottom;
 	}
 	
 	// returns scroll pane containing course table
-	public JScrollPane createCoursePane(){
+	public JScrollPane createCoursePane(ArrayList<Course> courseList){
 		TableModel dataModel = new AbstractTableModel() {
 			private static final long serialVersionUID = 3400114293267312129L;
 			
 			String[] columnNames = {"Course #",
 														"Name",
 														"Semester",
-														"Room",
+														"Major",
 														"Grade",
 														"Credits",
 														"Complete?"};
 	          public int getRowCount() { 
-	        	  return program.getNumCourses();
+	        	  return courseList.size();
 	          }
 	          public int getColumnCount() {
 	        	  return columnNames.length;
@@ -144,8 +163,8 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	          }
 	          public Class<?> getColumnClass(int columnIndex){
 	        	  switch (columnIndex){
-	        	  	case 4: // grade
-	        		  return  Double.class;
+	        	  case 3: // complete?
+	        	  		return  Boolean.class;
 	        	  	case 5:  // credits
 	        	  		return Integer.class;
 	        	  	case 6: // complete?
@@ -159,7 +178,7 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	          }
 	          public void setValueAt(Object value, int row, int col) {
 	        	  System.out.println("Setting value");
-	        	  Course c = program.getCourseList().get(row);
+	        	  Course c = courseList.get(row);
 	        	  switch (col){
 		        	  case 0: 
 		        		  c.setCode((String)value);
@@ -173,11 +192,12 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 		        		  c.setSemester((String)sem[0], Integer.parseInt(sem[1]));
 		        		  break;
 		        	  case 3: 
-		        		  c.setClassRoom((String)value);
+		        		  c.setMajor((Boolean)value);
 		        		  break;
 		        	  case 4: 
 		        		  // percentage view to fractional
-		        		  c.setGrade((Double)value * 0.01);
+		        		  Double grade = Double.parseDouble(((String)value).replace('%', '\0'));
+		        		  c.setGrade(grade * 0.01);
 		        		  break;
 		        	  case 5: 
 		        		  c.setCredits((Integer)value);
@@ -190,13 +210,13 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	              updateScreen();
 	          }
 	          public Object getValueAt(int row, int col) { 
-	        	  Course c = program.getCourseList().get(row);
+	        	  Course c = courseList.get(row);
 	        	  switch (col){
 		        	  case 0: return c.getCode();
 		        	  case 1: return c.getName();
 		        	  case 2: return c.getSemester().toString();
-		        	  case 3: return c.getClassRoom();
-		        	  case 4: return c.getGrade() * 100; // fractional to percentage view
+		        	  case 3: return c.isMajor();
+		        	  case 4: return c.getGrade() * 100 + " %"; // fractional to percentage view
 		        	  case 5: return c.getCreditHours();
 		        	  case 6: return c.isComplete();
 	        	  }
@@ -217,6 +237,55 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	      });
 	      */
 	      courseTable = new JTable(dataModel);
+	      
+	      // setting size of columns
+	      courseTable.getColumnModel().getColumn(1).setPreferredWidth(255);
+	      courseTable.getColumnModel().getColumn(2).setPreferredWidth(90);
+	      courseTable.getColumnModel().getColumn(5).setPreferredWidth(50);
+	      
+	      
+	      final JTableHeader header = courseTable.getTableHeader();  
+	      boolean[] sorted = new boolean[dataModel.getColumnCount()];
+	      header.addMouseListener(new MouseAdapter() {  
+	            public void mouseClicked(MouseEvent e) { 
+	                int col = header.columnAtPoint(e.getPoint());  
+	                if(header.getCursor().getType() == Cursor.E_RESIZE_CURSOR)  
+	                    e.consume();  
+	                else {  
+	                    System.out.printf("Sorting %s in %s order.%n", 
+	                    		dataModel.getColumnName(col), sorted[col] ? "ascending" : "descending"); 
+	                    
+	                    courseTable.clearSelection();
+	                    courseTable.setColumnSelectionInterval(col,col);
+	                    switch (col){
+	                    	case 0: // sort by Code		
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.CODE));
+	                    		break;
+	                    	case 1: // sort by course Name		
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.NAME));
+	                    		break;
+	                    	case 2: // sort by Semester
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.SEMESTER));
+	                    		break;
+	                    	case 3:
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.MAJOR));
+	                    		break;
+	                    	case 4:
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.GRADE));
+	                    		break;
+	                    	case 5:
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.CREDITS));
+	                    		break;
+	                    	case 6:
+	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.COMPLETE));
+	                    		break;
+	                    }
+	                    sorted[col] = !sorted[col]; // reverse flag so next time with sort in reverse
+	                    //dataModel[selectedTab].sortArrayList(col);  
+	                }  
+	            }  
+	        });  
+
 	      return new JScrollPane(courseTable);
 	}
 	
@@ -232,12 +301,15 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 		// Update program information
 		progLabel.setText("Program: " + program.getName());
 		credLabel.setText("Credits: " + program.getCredits());
-		cumAvgLabel.setText("Cumulative Average: "+program.getCumulativeGrade()*100+" %");
+		String cumAvg = String.format("%.2f", program.getCumulativeAverage()*100);
+		cumAvgLabel.setText("Cumulative Average: "+ cumAvg +" %");
+		String mjrAvg = String.format("%.2f", program.getMajorAverage()*100);
+		mjrAvgLabel.setText("Major Average: " + mjrAvg + " %");
 		completionBar.setValue(program.getCreditsEarned());
 		// Update course pane
 		if (program.getNumCourses() > 0){
 			mainPanel.remove(coursePane);
-			coursePane = createCoursePane();
+			coursePane = createCoursePane(program.getCourseList());
 			mainPanel.add(coursePane);			
 		}
 		

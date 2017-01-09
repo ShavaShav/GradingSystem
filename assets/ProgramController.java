@@ -38,7 +38,7 @@ public class ProgramController {
 		while(courseList.hasNext()){
 			Course c = courseList.next();
 			c.addObserver(p_model); // program model observes course model
-			for (Task t : c.taskList){
+			for (Task t : c.getTaskList()){
 				t.addObserver(c); // course model observes task model
 			}
 		}

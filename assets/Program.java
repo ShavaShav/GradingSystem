@@ -40,6 +40,10 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 		}
 	}
 	
+	public boolean removeCourse(int index){
+		return removeCourse(courseList.get(index));
+	}
+	
 	public boolean removeCourse(Course c){
 		try { 
 			c.deleteObservers();
@@ -67,14 +71,30 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 	public ArrayList<Course> getCourseList(){ return courseList; }
 	public int getNumCourses(){ return numCourses; }
 	
-	public double getCumulativeGrade(){
+	public double getCumulativeAverage(){
 		double grade = 0.00;
+		int totalCredits = 0;
 		for (Course c : courseList){
-			if (c.isComplete()){
+			// only count course that are complete, and have grade (transfer credits not counted)
+			if (c.isComplete() && c.getGrade() > 0.00){
+				totalCredits += c.getCreditHours();
 				grade += c.getGrade() * c.getCreditHours();
 			}
 		}
-		return grade / getCreditsEarned();
+		return grade / totalCredits;
+	}
+	
+	public double getMajorAverage(){
+		double grade = 0.00;
+		int totalCredits = 0;
+		for (Course c : courseList){
+			// only count course that are complete, and have grade (transfer credits not counted)
+			if (c.isComplete() && c.getGrade() > 0.00 && c.isMajor()){
+				totalCredits += c.getCreditHours();
+				grade += c.getGrade() * c.getCreditHours();
+			}
+		}
+		return grade / totalCredits;
 	}
 	
 	public int getCreditsEarned(){
@@ -129,7 +149,7 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 		String progStr = this.toString() + " (obs: " + this.countObservers() + ")\n";
 		for (Course c : courseList){
 			progStr += "\t" + c.toString() + " (obs: " + c.countObservers() + ")\n";
-			for (Task t : c.taskList){
+			for (Task t : c.getTaskList()){
 				progStr += "\t\t" + t.toString() + " (obs: " + t.countObservers() + ")\n";
 			}
 		}
