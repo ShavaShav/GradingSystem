@@ -3,7 +3,7 @@ package assets;
 import java.util.Date;
 import java.util.Observable;
 
-public class Task extends Observable implements java.io.Serializable{
+public class Task extends Observable implements Comparable<Task>, java.io.Serializable{
 	private static final long serialVersionUID = 8581517057344177875L;
 	protected String name;
 	private Date dueDate;
@@ -55,10 +55,6 @@ public class Task extends Observable implements java.io.Serializable{
 	public boolean isComplete(){ return isComplete; }
 	public boolean isGraded(){ return isGraded; }
 	
-	public boolean before(Task task){
-		return this.dueDate.before(task.dueDate);	
-	}
-	
 	// Let course know of change to task model
 	public void notifyChanged(){
 		System.out.println("Task model changed.");
@@ -68,5 +64,15 @@ public class Task extends Observable implements java.io.Serializable{
 	
 	public String toString(){
 		return name + " " + grade + "% (" + weight + "%) " + isComplete; 
+	}
+
+	@Override
+	public int compareTo(Task task) {
+		if (this.dueDate.before(task.dueDate))
+			return -1;
+		else if (this.dueDate.after(task.dueDate))
+			return 1;
+		else
+			return 0;
 	}
 }

@@ -1,6 +1,8 @@
 package assets;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.ListIterator;
 import java.util.Observable;
 import java.util.Observer;
@@ -125,6 +127,15 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 	
 	public ListIterator<Course> getIterator(){
 		return courseList.listIterator();
+	}
+	
+	public ArrayList<Task> getUpcomingDeadlines(Date limit){
+		ArrayList<Task> deadlines = new ArrayList<Task>();
+		for (Course c : courseList){
+			deadlines.addAll(c.getUpcomingDeadlines(limit));
+		}
+		Collections.sort(deadlines);
+		return deadlines;
 	}
 
 	// When a course/task changes, notify the program view

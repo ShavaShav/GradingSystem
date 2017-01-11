@@ -1,58 +1,67 @@
 package assets;
 
 import java.awt.BorderLayout;
-import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableModel;
 
 public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	private static final long serialVersionUID = 1L;
 	private Program program;	
 	private HashMap<Course, CourseController> c_controllers;
+	private ArrayList<Task> deadlines;
 	
 	private JButton newProgram, addCourse, saveButton, loadButton;	
 	private JLabel progLabel, credLabel, cumAvgLabel, mjrAvgLabel;
-	private JPanel mainPanel;
-	private JScrollPane coursePane;
-	private JTable courseTable;
+	private JPanel mainPanel, deadlinePanel, centralPanel;
+	private JScrollPane coursePane, deadlineTablePane;
+	private JTable courseTable, deadlineTable;
 	private JProgressBar completionBar;
 	
-	private int height, width;
-	
+	private int height = 800, width = 700;
 	
 	public ProgramFrame(Program p){
-		program = p;	// use model given
+		// use model given
+		program = p;	
+		// each course model has it's own controller for displaying views
 		c_controllers = new HashMap<Course, CourseController>();
-		height = 600;
-		width = 700;
 		this.setSize(width, height);
 		this.setLayout(new BorderLayout());
 		this.setTitle("Grade Tracker");
+		
+		// New program, save and load buttons
 		this.add(createHeader(), BorderLayout.PAGE_START);
+		
+		centralPanel = new JPanel(new GridLayout(0,1));
+		
+		// Displays program information and course table
 		mainPanel = createMainPanel();
-		this.add(mainPanel, BorderLayout.CENTER);
+		centralPanel.add(mainPanel);
+		// add panel containing deadlines
+		deadlinePanel = createDeadlinePanel();
+		centralPanel.add(deadlinePanel);
+		
+		this.add(centralPanel, BorderLayout.CENTER);
+		
+		// Buttons for manipulating the table (deleting, adding courses, etc)
 		this.add(createFooter(), BorderLayout.PAGE_END);		
+		
 		try{
 			updateScreen();
 		} catch (Exception e) {
@@ -77,216 +86,112 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	
 	private JPanel createMainPanel(){
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		JPanel mainLabels = new JPanel(new GridLayout(0,1));
-		mainLabels.setSize(width, 30);
+		
+		mainPanel.add(createProgramInfoPanel(), BorderLayout.PAGE_START);
+		
+		coursePane = createCourseTablePane(program.getCourseList());
+		mainPanel.add(coursePane, BorderLayout.CENTER);		
+		
+		return mainPanel;
+	}
+	
+	private JPanel createDeadlinePanel(){
+		JPanel deadlinePanel = new JPanel(new BorderLayout());
+		JPanel limitPanel = new JPanel(new GridLayout(0,1));
+		limitPanel.add(new JLabel("Upcoming Deadlines"));
+		String[] options = {"1 week", "2 weeks", "3 weeks", "4 weeks"};
+		JComboBox limits = new JComboBox(options);
+		limits.setSelectedIndex(1); // default to 2 weeks
+		limits.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				 JComboBox cb = (JComboBox)e.getSource();
+				 int weeks = cb.getSelectedIndex() + 1; // as 1 week = 0
+				 Date limit = new Date();
+				 Calendar calendar = Calendar.getInstance();
+				 calendar.setTime(limit);            
+				 calendar.add(Calendar.WEEK_OF_YEAR, weeks);
+				 limit = calendar.getTime();
+				 deadlines = program.getUpcomingDeadlines(limit);
+				 updateScreen();
+			}
+		});
+		limitPanel.add(limits);
+		deadlinePanel.add(limitPanel, BorderLayout.PAGE_START);
+		
+		Calendar calendar = Calendar.getInstance();
+		 calendar.setTime(new Date());            
+		 calendar.add(Calendar.WEEK_OF_YEAR, 2);
+		deadlines = program.getUpcomingDeadlines(calendar.getTime());
+		deadlineTablePane = createDeadlineTablePane(deadlines);
+		deadlinePanel.add(deadlineTablePane, BorderLayout.CENTER);		
+		
+		return deadlinePanel;
+	}
+	
+	private JPanel createProgramInfoPanel(){
+		JPanel programInfoPanel = new JPanel(new GridLayout(0,1));
+		programInfoPanel.setSize(width, 30);
 		progLabel  = new JLabel("Program: ");
 		credLabel  = new JLabel("Credits: ");
-		mainLabels.add(progLabel);
-		mainLabels.add(credLabel);
+		programInfoPanel.add(progLabel);
+		programInfoPanel.add(credLabel);
 		JPanel gradeLabels = new JPanel(new GridLayout(0,3));
 		cumAvgLabel = new JLabel("Cumulative Average: ");
 		gradeLabels.add(cumAvgLabel);
 		mjrAvgLabel = new JLabel("\tMajor Average: ");
 		gradeLabels.add(mjrAvgLabel);
-		mainLabels.add(gradeLabels);;
+		programInfoPanel.add(gradeLabels);
 		completionBar = new JProgressBar(0, program.getCredits());
 		completionBar.setValue(0);
 		completionBar.setStringPainted(true);
-		mainLabels.add(completionBar);
-		mainPanel.add(mainLabels, BorderLayout.PAGE_START);
+		programInfoPanel.add(completionBar);
+		return programInfoPanel;
+	}
+	
+	// returns scroll pane containing course table
+	public JScrollPane createCourseTablePane(ArrayList<Course> courseList){
 		if (program.getNumCourses() == 0){
-			coursePane = new JScrollPane();
+			JScrollPane coursePane = new JScrollPane();
 			coursePane.add(new JLabel("No courses yet..."));
+			return coursePane;
 		} else {
-			coursePane = createCoursePane(program.getCourseList());
+			CourseTableModel dataModel = new CourseTableModel(courseList);
+		    courseTable = new CourseTable(dataModel);
+		    return new JScrollPane(courseTable);
 		}
-		mainPanel.add(coursePane, BorderLayout.CENTER);		
-		return mainPanel;
+	}
+	
+	// returns scroll pane containing course table
+	public JScrollPane createDeadlineTablePane(ArrayList<Task> deadlines){
+		if (deadlines.isEmpty()){
+			System.out.println("No deadlines");
+			JScrollPane coursePane = new JScrollPane();
+			coursePane.add(new JLabel("No tasks for next 2 weeks!"));
+			return coursePane;
+		} else {
+			TaskTableModel dataModel = new TaskTableModel(deadlines);
+		    deadlineTable = new TaskTable(dataModel);
+		    return new JScrollPane(deadlineTable);
+		}
 	}
 	
 	private JPanel createFooter(){
 		JPanel bottom = new JPanel(new FlowLayout());	
+		
 		JButton viewCourse = new JButton("View Course Details");
-		viewCourse.addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				int tableRow = courseTable.getSelectedRow();
-				if (tableRow >= 0){ // selected course
-					Course c = program.getCourseList().get(tableRow);
-					// if course doesn't have controller, add it on fly
-					if (!c_controllers.containsKey(c)){
-						CourseFrame c_view = new CourseFrame(c);
-						c_controllers.put(c, new CourseController(c, c_view));							
-					}
-					// show the view for course using controller
-					c_controllers.get(c).showView();
-				}
-			}
-		});
+		viewCourse.addActionListener(this);
 		bottom.add(viewCourse);
+		
 		addCourse  = new JButton("Add Course");
 		bottom.add(addCourse);
 		addCourse.addActionListener(this);
 		
 		JButton deleteCourse = new JButton("Delete Course");
-		deleteCourse.addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (courseTable.getSelectedRow() >= 0)
-					program.removeCourse(courseTable.getSelectedRow());
-			}
-		});
+		deleteCourse.addActionListener(this);
 		bottom.add(deleteCourse);
+		
 		return bottom;
-	}
-	
-	// returns scroll pane containing course table
-	public JScrollPane createCoursePane(ArrayList<Course> courseList){
-		TableModel dataModel = new AbstractTableModel() {
-			private static final long serialVersionUID = 3400114293267312129L;
-			
-			String[] columnNames = {"Course #",
-														"Name",
-														"Semester",
-														"Major",
-														"Grade",
-														"Credits",
-														"Complete?"};
-	          public int getRowCount() { 
-	        	  return courseList.size();
-	          }
-	          public int getColumnCount() {
-	        	  return columnNames.length;
-	          }
-	          public String getColumnName(int index){
-	        	  return columnNames[index];
-	          }
-	          public Class<?> getColumnClass(int columnIndex){
-	        	  switch (columnIndex){
-	        	  case 3: // complete?
-	        	  		return  Boolean.class;
-	        	  	case 5:  // credits
-	        	  		return Integer.class;
-	        	  	case 6: // complete?
-	        	  		return  Boolean.class;
-	        	  	default:
-	        	  		return String.class;
-	        	  }
-	          }
-	          public boolean isCellEditable(int row, int column){
-	        	  return true;
-	          }
-	          public void setValueAt(Object value, int row, int col) {
-	        	  System.out.println("Setting value");
-	        	  Course c = courseList.get(row);
-	        	  switch (col){
-		        	  case 0: 
-		        		  c.setCode((String)value);
-		        		  break;
-		        	  case 1: 
-		        		  c.setName((String)value);
-		        		  break;
-		        	  case 2: 
-		        		  String s = (String) value;
-		        		  String[] sem = s.split(" ");
-		        		  c.setSemester((String)sem[0], Integer.parseInt(sem[1]));
-		        		  break;
-		        	  case 3: 
-		        		  c.setMajor((Boolean)value);
-		        		  break;
-		        	  case 4: 
-		        		  // percentage view to fractional
-		        		  Double grade = Double.parseDouble(((String)value).replace('%', '\0'));
-		        		  c.setGrade(grade * 0.01);
-		        		  break;
-		        	  case 5: 
-		        		  c.setCredits((Integer)value);
-		        		  break;
-		        	  case 6: 
-		        		  c.setComplete((Boolean)value);
-		        		  break;
-	        	  }
-	              fireTableCellUpdated(row, col);
-	              updateScreen();
-	          }
-	          public Object getValueAt(int row, int col) { 
-	        	  Course c = courseList.get(row);
-	        	  switch (col){
-		        	  case 0: return c.getCode();
-		        	  case 1: return c.getName();
-		        	  case 2: return c.getSemester().toString();
-		        	  case 3: return c.isMajor();
-		        	  case 4: return c.getGrade() * 100 + " %"; // fractional to percentage view
-		        	  case 5: return c.getCreditHours();
-		        	  case 6: return c.isComplete();
-	        	  }
-	        	  return null;
-	          }
-	      };
-	      /*
-	      dataModel.addTableModelListener(new TableModelListener(){
-			@Override
-			public void tableChanged(TableModelEvent e) {
-				int row = e.getFirstRow();
-				int column = e.getColumn();
-				TableModel model = (TableModel)e.getSource();
-				String columnName = model.getColumnName(column);
-				Object data = model.getValueAt(row, column);
-				System.out.println(columnName);
-			}  	  
-	      });
-	      */
-	      courseTable = new JTable(dataModel);
-	      
-	      // setting size of columns
-	      courseTable.getColumnModel().getColumn(1).setPreferredWidth(255);
-	      courseTable.getColumnModel().getColumn(2).setPreferredWidth(90);
-	      courseTable.getColumnModel().getColumn(5).setPreferredWidth(50);
-	      
-	      
-	      final JTableHeader header = courseTable.getTableHeader();  
-	      boolean[] sorted = new boolean[dataModel.getColumnCount()];
-	      header.addMouseListener(new MouseAdapter() {  
-	            public void mouseClicked(MouseEvent e) { 
-	                int col = header.columnAtPoint(e.getPoint());  
-	                if(header.getCursor().getType() == Cursor.E_RESIZE_CURSOR)  
-	                    e.consume();  
-	                else {  
-	                    System.out.printf("Sorting %s in %s order.%n", 
-	                    		dataModel.getColumnName(col), sorted[col] ? "ascending" : "descending"); 
-	                    
-	                    courseTable.clearSelection();
-	                    courseTable.setColumnSelectionInterval(col,col);
-	                    switch (col){
-	                    	case 0: // sort by Code		
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.CODE));
-	                    		break;
-	                    	case 1: // sort by course Name		
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.NAME));
-	                    		break;
-	                    	case 2: // sort by Semester
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.SEMESTER));
-	                    		break;
-	                    	case 3:
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.MAJOR));
-	                    		break;
-	                    	case 4:
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.GRADE));
-	                    		break;
-	                    	case 5:
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.CREDITS));
-	                    		break;
-	                    	case 6:
-	                    		courseList.sort(new CourseComparator(sorted[col], CourseComparator.COMPLETE));
-	                    		break;
-	                    }
-	                    sorted[col] = !sorted[col]; // reverse flag so next time with sort in reverse
-	                    //dataModel[selectedTab].sortArrayList(col);  
-	                }  
-	            }  
-	        });  
-
-	      return new JScrollPane(courseTable);
 	}
 	
 	public void addLoadListener(ActionListener lal){
@@ -297,32 +202,7 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 		saveButton.addActionListener(sal);
 	}
 
-	public void updateScreen(){
-		// Update program information
-		progLabel.setText("Program: " + program.getName());
-		credLabel.setText("Credits: " + program.getCredits());
-		String cumAvg = String.format("%.2f", program.getCumulativeAverage()*100);
-		cumAvgLabel.setText("Cumulative Average: "+ cumAvg +" %");
-		String mjrAvg = String.format("%.2f", program.getMajorAverage()*100);
-		mjrAvgLabel.setText("Major Average: " + mjrAvg + " %");
-		completionBar.setValue(program.getCreditsEarned());
-		// Update course pane
-		if (program.getNumCourses() > 0){
-			mainPanel.remove(coursePane);
-			coursePane = createCoursePane(program.getCourseList());
-			mainPanel.add(coursePane);			
-		}
-		
-		this.setVisible(true);
-	}
-
-	// Updates screen when model is updated
-	@Override
-	public void update(Observable arg0, Object arg1) {
-		//System.out.println("Program Frame has received update");
-		updateScreen();
-	}
-
+	// Other button listeners implemented here
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("New Program")){
@@ -336,7 +216,55 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 			ac_view.setVisible(true);
 			ac_view.setAlwaysOnTop(true);
 			ac_view.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		} else if (e.getActionCommand().equals("Delete Course")){
+			int tableRow = courseTable.getSelectedRow();
+			int modelRow = courseTable.convertRowIndexToModel(tableRow);
+			if (modelRow >= 0)
+				program.removeCourse(modelRow);
+		} else if (e.getActionCommand().equals("View Course Details")){
+			// convert from view to model index, incase view changed
+			int tableRow = courseTable.getSelectedRow();
+			int modelRow = courseTable.convertRowIndexToModel(tableRow);
+			if (modelRow >= 0){ // selected course
+				Course c = program.getCourseList().get(modelRow);
+				// if course doesn't have controller, add it on fly
+				if (!c_controllers.containsKey(c)){
+					CourseFrame c_view = new CourseFrame(c);
+					c_controllers.put(c, new CourseController(c, c_view));							
+				}
+				// show the view for course using controller
+				c_controllers.get(c).showView();
+			}
 		}
 	}
-	
+
+	public void updateScreen(){
+		// Update program information
+		progLabel.setText("Program: " + program.getName());
+		credLabel.setText("Credits: " + program.getCredits());
+		String cumAvg = String.format("%.2f", program.getCumulativeAverage()*100);
+		cumAvgLabel.setText("Cumulative Average: "+ cumAvg +" %");
+		String mjrAvg = String.format("%.2f", program.getMajorAverage()*100);
+		mjrAvgLabel.setText("Major Average: " + mjrAvg + " %");
+		completionBar.setValue(program.getCreditsEarned());
+		
+		// Update course pane
+		if (program.getNumCourses() > 0){
+			mainPanel.remove(coursePane);
+			coursePane = createCourseTablePane(program.getCourseList());
+			mainPanel.add(coursePane);
+			deadlinePanel.remove(deadlineTablePane);
+			deadlineTablePane = createDeadlineTablePane(deadlines);
+			deadlinePanel.add(deadlineTablePane);
+		}
+		
+		this.setVisible(true);
+	}
+
+	// Updates screen when model is updated
+	@Override
+	public void update(Observable arg0, Object arg1) {
+		//System.out.println("Program Frame has received update");
+		updateScreen();
+	}
 }

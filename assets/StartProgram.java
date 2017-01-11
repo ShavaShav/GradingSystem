@@ -6,7 +6,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 
 public class StartProgram {
-	private final static String defaultSavePath = "/temp/temp_program.ser";
+	private final static String defaultSavePath = "temp_program.ser";
 	private static ProgramController controller;
 	
 	public static void go(Program model){
@@ -34,7 +34,7 @@ public class StartProgram {
 			model = ProgramController.getModelFromPath(defaultSavePath);
 		else
 			model = new Program();
-		
+
 		go(model);
 		 //System.out.println(model.obsString()); // debug structure of model with observers
 	}
