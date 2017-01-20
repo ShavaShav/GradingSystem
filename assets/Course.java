@@ -1,11 +1,7 @@
 package assets;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.List;
 import java.util.ListIterator;
 import java.util.Observable;
 import java.util.Observer;
@@ -86,7 +82,6 @@ public class Course extends Observable implements Observer, java.io.Serializable
 			if (!t.isComplete() && t.getDueDate().before(limit))
 				deadlines.add(t);
 		}
-
 		return deadlines;
 	}
 	

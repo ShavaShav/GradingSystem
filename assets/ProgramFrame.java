@@ -33,6 +33,7 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	private JScrollPane coursePane, deadlineTablePane;
 	private JTable courseTable, deadlineTable;
 	private JProgressBar completionBar;
+	Date deadlineLimit;
 	
 	private int height = 800, width = 700;
 	
@@ -107,23 +108,23 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 			public void actionPerformed(ActionEvent e) {
 				 JComboBox cb = (JComboBox)e.getSource();
 				 int weeks = cb.getSelectedIndex() + 1; // as 1 week = 0
-				 Date limit = new Date();
 				 Calendar calendar = Calendar.getInstance();
-				 calendar.setTime(limit);            
-				 calendar.add(Calendar.WEEK_OF_YEAR, weeks);
-				 limit = calendar.getTime();
-				 deadlines = program.getUpcomingDeadlines(limit);
+				 calendar.setTime(new Date()); 				 // today          
+				 calendar.add(Calendar.WEEK_OF_YEAR, weeks); // +2 weeks
+				 deadlineLimit = calendar.getTime();		 
 				 updateScreen();
 			}
 		});
 		limitPanel.add(limits);
 		deadlinePanel.add(limitPanel, BorderLayout.PAGE_START);
 		
+		// default deadline to 2 weeks past current date
 		Calendar calendar = Calendar.getInstance();
-		 calendar.setTime(new Date());            
-		 calendar.add(Calendar.WEEK_OF_YEAR, 2);
-		deadlines = program.getUpcomingDeadlines(calendar.getTime());
-		deadlineTablePane = createDeadlineTablePane(deadlines);
+		calendar.setTime(new Date());            
+		calendar.add(Calendar.WEEK_OF_YEAR, 2);
+		
+		deadlineLimit = calendar.getTime();
+		deadlineTablePane = createDeadlineTablePane();
 		deadlinePanel.add(deadlineTablePane, BorderLayout.CENTER);		
 		
 		return deadlinePanel;
@@ -163,17 +164,10 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 	}
 	
 	// returns scroll pane containing course table
-	public JScrollPane createDeadlineTablePane(ArrayList<Task> deadlines){
-		if (deadlines.isEmpty()){
-			System.out.println("No deadlines");
-			JScrollPane coursePane = new JScrollPane();
-			coursePane.add(new JLabel("No tasks for next 2 weeks!"));
-			return coursePane;
-		} else {
-			TaskTableModel dataModel = new TaskTableModel(deadlines);
-		    deadlineTable = new TaskTable(dataModel);
-		    return new JScrollPane(deadlineTable);
-		}
+	public JScrollPane createDeadlineTablePane(){
+		DeadlineTableModel dataModel = new DeadlineTableModel(program.getCourseList(), deadlineLimit);
+	    deadlineTable = new DeadlineTable(dataModel);
+	    return new JScrollPane(deadlineTable);
 	}
 	
 	private JPanel createFooter(){
@@ -254,7 +248,7 @@ public class ProgramFrame extends JFrame implements Observer, ActionListener{
 			coursePane = createCourseTablePane(program.getCourseList());
 			mainPanel.add(coursePane);
 			deadlinePanel.remove(deadlineTablePane);
-			deadlineTablePane = createDeadlineTablePane(deadlines);
+			deadlineTablePane = createDeadlineTablePane();
 			deadlinePanel.add(deadlineTablePane);
 		}
 		
