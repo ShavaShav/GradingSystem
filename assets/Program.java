@@ -116,6 +116,18 @@ public class Program extends Observable implements Observer,  java.io.Serializab
 			return percent;
 	}
 	
+	// returns array of all semesters
+	public ArrayList<Semester> getSemesters(){
+		ArrayList<Semester> semesters = new ArrayList<Semester>();
+		for (Course c : courseList){
+			if (!semesters.contains(c.getSemester())){
+				semesters.add(c.getSemester());
+			}
+		}
+		return semesters;
+		
+	}
+	
 	public ArrayList<Course> getCoursesBySemester(Semester semester){
 		ArrayList<Course> semesterCourses =  new ArrayList<Course>();
 		for (Course course : courseList){

@@ -18,6 +18,8 @@ public class TaskTable extends JTable{
 	public TaskTable(TaskTableModel model){
 		super(model);
 		
+		getColumnModel().getColumn(0).setPreferredWidth(150);
+		
 		// format date column
 		TableColumn dateColumn = getColumnModel().getColumn(1);
 		 dateColumn.setCellEditor(new DatePickerCellEditor());

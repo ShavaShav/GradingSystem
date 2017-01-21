@@ -2,6 +2,7 @@ package assets;
 
 import java.util.ArrayList;
 
+
 public class Semester implements Comparable<Semester>, java.io.Serializable{
 	private static final long serialVersionUID = -8275772933637314385L;
 	private String season;
@@ -76,6 +77,23 @@ public class Semester implements Comparable<Semester>, java.io.Serializable{
 			orderedSemesters.add("Summer");
 			orderedSemesters.add("Fall");
 			return (orderedSemesters.indexOf(this.season) - orderedSemesters.indexOf(s.season));
+		}
+	}
+	
+	@Override
+	public int hashCode() {
+        int result = 17; // primes
+        result = 31 * result + season.hashCode(); // 2nd char
+        result = 31 * result + year;
+        return result;
+   }
+	
+	@Override
+	public boolean equals(Object o ) {
+		if (o instanceof Semester){
+			return this.compareTo((Semester)o)==0 ? true : false;
+		} else {
+			return false;
 		}
 	}
 }

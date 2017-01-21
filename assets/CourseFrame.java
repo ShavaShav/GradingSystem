@@ -3,6 +3,7 @@ package assets;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.SystemColor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -26,8 +27,9 @@ public class CourseFrame extends JFrame implements Observer{
 	
 	public CourseFrame(Course c){
 		c_model = c;
-		this.setSize(600, 600);
+		this.setSize(600, 400);
 		this.setTitle(c.getName());
+		this.getContentPane().setBackground(SystemColor.inactiveCaption);
 		this.setLayout(new BorderLayout());
 		
 		// Display general course information
@@ -44,6 +46,7 @@ public class CourseFrame extends JFrame implements Observer{
 	
 	private JPanel createHeader(){
 		JPanel header = new JPanel(new GridLayout(0,1));
+		header.setBackground(SystemColor.inactiveCaption);
 		header.add(new JLabel("Course: " + c_model.getName() + " (" + c_model.getCode() + ")"));
 		header.add(new JLabel("Worth " + c_model.getCreditHours() + " credit(s)"));
 		header.add(new JLabel("Semester: " + c_model.getSemester().toString()));
@@ -67,6 +70,7 @@ public class CourseFrame extends JFrame implements Observer{
 	
 	private JPanel createFooter(){
 		JPanel bottom = new JPanel(new FlowLayout());
+		bottom.setBackground(SystemColor.inactiveCaption);
 		JButton addTask  = new JButton("Add Task"); // Add task button
 		bottom.add(addTask);
 		addTask.addActionListener(new ActionListener(){
